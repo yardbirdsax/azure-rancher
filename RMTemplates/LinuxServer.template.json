@@ -1,0 +1,176 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "adminUsername": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the Administrator account of the new VM"
+      },
+      "defaultValue": "gatewayadmin"
+    },
+    "sshKeys": {
+      "type": "array",
+      "metadata": {
+        "description": "Array of SSH public keys to install on the virtual machines."
+      }
+    },
+    "virtualNetworkResourceGroupName":{
+      "type": "string"
+    },
+    "ipConfigurations":{
+      "type": "array",
+      "metadata": {
+        "description":"An array of objects describing the ip configurations to be created on the VM nic."
+      }
+    },
+    "VMName":{
+      "type": "string"
+    },
+    "recoveryVaultName":{
+      "type": "string",
+      "metadata": {
+        "description":"The name of the recovery vault to use for backup."        
+      },
+      "defaultValue":"none"
+    },
+    "availabilitySetName":{
+      "type": "string",
+      "metadata": {
+        "description":"The name of the availability set to put the server in if it is part of a multi-server set."
+      },
+      "defaultValue": "none"
+    },
+    "VMSize":{
+        "type": "string"
+    },
+    "dataDiskSize":{
+        "type": "int",
+        "defaultValue": 64,
+        "metadata": {
+            "description":"The size of the VM data disks in gigabytes."
+        }
+    }
+  },
+  "variables": {
+    "VnetID": "[resourceID(parameters('virtualNetworkResourceGroupName'),'Microsoft.Network/virtualNetworks',parameters('virtualNetworkResourceGroupName'))]",
+    "eGalSubnetName": "Web",
+    "eGalSubnetRef": "[concat(variables('VnetID'),'/subnets/',variables('eGalSubnetName'))]",
+    "storageAccountType":"[if(not(equals(parameters('availabilitySetName'),'none')),'Standard_LRS','Premium_LRS')]",
+    "imagePublisher": "OpenLogic",
+    "imageOffer": "CentOS",
+    "imageSKU": "7.3",
+    "vmNicName":"[concat(parameters('VMName'),'-nic')]",
+    "vmDependencies":"[if(not(equals(parameters('availabilitySetName'),'none')),concat(array(variables('vmNicName')),array(parameters('availabilitySetName'))),array(variables('vmNicName')))]",
+    "availabilitySet":{
+      "id":"[resourceId(resourceGroup().name,'Microsoft.Compute/availabilitySets',parameters('availabilitySetName'))]"
+    }
+  },
+  "resources": [
+    {
+      "name": "[concat(parameters('VMName'),'-nic')]",
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2016-03-30",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "copy":[{
+          "name": "ipConfigurations",
+          "count":"[length(parameters('ipConfigurations'))]",
+          "input":{
+            "name":"[concat('ipconfig',copyIndex('ipConfigurations'))]",
+            "properties": {
+              "privateIPAllocationMethod": "Static",
+              "privateIPAddress":"[parameters('ipConfigurations')[copyIndex('ipConfigurations')].ipAddress]",
+              "subnet": {
+                "id": "[variables('eGalSubnetRef')]"
+              },
+              "primary":"[if(equals(copyIndex('ipConfigurations'),0),'true','false')]",
+              "loadBalancerBackEndAddressPools":"[if(greater(length(parameters('ipConfigurations')[copyIndex('ipConfigurations')].backEndPools),0),parameters('ipConfigurations')[copyIndex('ipConfigurations')].backEndPools,json('null'))]"
+            }
+          }
+        }]
+      }
+    },
+    {
+      "name": "[parameters('VMName')]",
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2016-04-30-preview",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [
+        "[variables('vmNicName')]"
+      ],
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[parameters('VMSize')]"
+        },
+        "availabilitySet":"[if(not(equals(parameters('availabilitySetName'),'none')),variables('availabilitySet'),json('null'))]",
+        "osProfile": {
+          "computerName": "[parameters('VMName')]",
+          "adminUsername": "[parameters('adminUsername')]",
+          "linuxConfiguration":{
+            "ssh":{
+                "publicKeys":"[parameters('sshKeys')]"
+            }
+          }
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "[variables('imagePublisher')]",
+            "offer": "[variables('imageOffer')]",
+            "sku": "[variables('imageSKU')]",
+            "version": "latest"
+          },
+          "osDisk": {
+            "name": "[concat(parameters('VMName'),'-osdisk')]",
+            "managedDisk":{
+              "storageAccountType":"[variables('storageAccountType')]"
+            },
+            "caching": "ReadWrite",
+            "createOption": "FromImage"
+          },
+          "dataDisks": [
+            {
+              "managedDisk":{
+                "storageAccountType":"[variables('storageAccountType')]"
+              },
+              "name": "[concat(parameters('VMName'),'-data-disk1')]",
+              "caching": "None",
+              "diskSizeGB": "[parameters('dataDiskSize')]",
+              "lun": 0,
+              "createOption": "Empty"
+            }
+          ]
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId(resourceGroup().Name,'Microsoft.Network/networkInterfaces',concat(parameters('VMName'),'-nic'))]"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "[concat(parameters('recoveryVaultName'), '/Azure', '/iaasvmcontainer;iaasvmcontainerv2;',resourceGroup().name,';',parameters('VMName'), '/vm;iaasvmcontainerv2;', resourceGroup().name,';',parameters('VMName'))]",
+      "type": "Microsoft.RecoveryServices/vaults/backupFabrics/protectionContainers/protectedItems",
+      "apiVersion": "2016-12-01",
+      "location": "[resourceGroup().location]",
+      "condition":"[not(equals(parameters('recoveryVaultName'),'none'))]",
+      "tags": {},
+      "properties": {
+        "protectedItemType": "Microsoft.Compute/virtualMachines",
+        "sourceResourceId": "[resourceId(subscription().subscriptionId,resourceGroup().name,'Microsoft.Compute/virtualMachines',parameters('VMName'))]",
+        "policyId": "[resourceId('Microsoft.RecoveryServices/vaults/backupPolicies',parameters('recoveryVaultName'),'Daily3AM')]"
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Compute/virtualMachines/',parameters('VMName'))]"
+      ]
+    }
+  ],
+  "outputs": {
+    "return":{
+      "type": "array",
+      "value": "[variables('vmDependencies')]"
+    }
+  }
+}

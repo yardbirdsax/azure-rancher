@@ -1,0 +1,129 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "adminUsername": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the Administrator account of the new VMs"
+      },
+      "defaultValue": "azureadmin"
+    },
+    "sshKeys": {
+        "type": "array",
+        "metadata": {
+          "description": "Array of SSH public keys to install on the virtual machines."
+        }
+    },
+    "virtualNetworkResourceGroupName":{
+      "type": "string",
+      "metadata": {
+        "description": "The name of the resource group where the virtual network resides."
+      }
+    },
+    "recoveryVaultName":{
+      "type": "string",
+      "metadata": {
+        "description":"The name of the recovery vault to use for backup."        
+      },
+      "defaultValue":"none"
+    },
+    "serverCount":{
+      "type": "int",
+      "metadata": {
+        "description":"The number of web servers to create."
+      }
+    },
+    "virtualMachineName":{
+      "type": "string",
+      "metadata": {
+          "description":"The first part of the virtual machine name. Full names will use this plus a numerical incrementing identifier based on the number of VMs to provision."
+      }
+    },
+    "branchName":{
+        "type": "string",
+        "defaultValue": "master"
+    },
+    "gitHubUserName":{
+        "type": "string",
+        "defaultValue": "yardbirdsax"
+    },
+    "dataDiskSize":{
+        "type": "int",
+        "defaultValue": 64,
+        "metadata": {
+            "description":"The size of the VM data disks in gigabytes."
+        }
+    }
+  },
+  "variables": {
+    "templateUrl": "[concat('https://raw.githubusercontent.com/',parameters('gitHubUserName'),'azure-rancher/',parameters('branchName'),'/RMTemplates/')]",
+    "availabilitySetName":"[concat(parameters('virtualMachineName'),'KUBE-AS')]"
+  },
+  "resources": [
+    {
+      "name": "[variables('availabilitySetName')]",
+      "condition":"[greater(parameters('serverCount'),1)]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2016-06-01",
+      "properties": {
+        "templateLink":{
+          "uri":"[concat(variables('templateURL'),'AvailabilitySet.template.json')]"
+        },
+        "mode":"Incremental",
+        "parameters":{
+          "availabilitySetName":{
+            "value":"[variables('availabilitySetName')]"
+          }
+        }
+      }
+    },
+    {
+      "name": "[concat(parameters('virtualMachineName'),if(less(copyIndex(),10),concat('0',add(copyIndex(),1)),add(copyIndex(),1)))]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2016-06-01",
+      "copy": {
+        "count":"[parameters('serverCount')]",
+        "name": "WebServerCopy"
+      },
+      "dependsOn": [
+        "[variables('availabilitySetName')]"
+      ],
+      "properties": {
+        "templateLink":{
+          "uri":"[concat(variables('templateURL'),'LinuxServer.template.json')]"
+        },
+        "mode":"Incremental",
+        "parameters":{
+          "adminUserName":{
+            "value":"[parameters('adminUsername')]"
+          },
+          "sshKeys":{
+            "value":"[parameters('sshKeys')]"
+          },
+          "virtualNetworkResourceGroupName":{
+            "value":"[parameters('virtualNetworkResourceGroupName')]"
+          },
+          "recoveryVaultName":{
+            "value":"[parameters('recoveryVaultName')]"
+          },
+          "VMName":{
+            "value":"[concat(parameters('virtualMachineName'),if(less(copyIndex(),10),concat('0',add(copyIndex(),1)),add(copyIndex(),1)))]"
+          },
+          "availabilitySetName":{
+            "value":"[if(greater(parameters('serverCount'),1),variables('availabilitySetName'),'none')]"
+          },
+          "dataDiskSize":{
+              "value":"[parameters('dataDiskSize')]"
+          }
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "return":{
+      "type": "array",
+      "value": []
+    }
+  }
+}

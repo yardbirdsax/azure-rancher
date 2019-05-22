@@ -1,0 +1,31 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+      "adminUsername":{
+        "value": "azureadmin"
+      },
+      "sshKeys":{
+          "metadata": {
+              "description":"An array of SSH public keys to use with the VMs."
+          },
+          "value": [
+
+          ]
+      },
+      "virtualMachineName":{
+        "value": "USE-GTSDPWEB",
+        "metadata": {
+          "description":"The first part of the virtual machine name. Full names will use this plus a numerical incrementing identifier based on the number of VMs to provision."
+      },
+      "virtualNetworkResourceGroupName":{
+        "value":"JEFLab"
+      },
+      "recoveryVaultName":{
+        "value": "none"
+      },
+      "webServerCount":{
+        "value": 4
+      }
+    }
+}
