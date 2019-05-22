@@ -97,6 +97,32 @@
       }
     },
     {
+      "name": "[parameters('loadBalancerName')]",
+      "condition":"[not(equals('none',parameters('loadBalancerName')))]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2016-06-01",
+      "properties": {
+        "templateLink":{
+          "uri":"[concat(variables('templateURL'),'LoadBalancer.template.json')]"
+        },
+        "mode":"Incremental",
+        "parameters":{
+          "loadBalancerName":{
+            "value":"[parameters('loadBalancerName')]"
+          },
+          "virtualNetworkResourceGroupName":{
+            "value":"[parameters('virtualNetworkResourceGroupName')]"
+          },
+          "virtualNetworkName":{
+              "value":"[parameters('virtualNetworkName')]"
+          },
+          "subnetName":{
+              "value":"[parameters('subnetName')]"
+          }
+        }
+      }
+    },
+    {
       "name": "[concat(parameters('virtualMachineName'),if(less(copyIndex(),10),concat('0',add(copyIndex(),1)),add(copyIndex(),1)))]",
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2016-06-01",
@@ -105,7 +131,8 @@
         "name": "WebServerCopy"
       },
       "dependsOn": [
-        "[variables('availabilitySetName')]"
+        "[variables('availabilitySetName')]",
+        "[parameters('loadBalancerName')]"
       ],
       "properties": {
         "templateLink":{
