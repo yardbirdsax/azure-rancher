@@ -71,10 +71,12 @@
   "variables": {
     "VnetID": "[resourceID(parameters('virtualNetworkResourceGroupName'),'Microsoft.Network/virtualNetworks',parameters('virtualNetworkName'))]",
     "subnetRef": "[concat(variables('VnetID'),'/subnets/',parameters('subnetName'))]",
-    "backendPoolId":"[resourceId('Microsoft.Network/loadBalancers/backendPools',parameters('loadBalancerName'),parameters('backendPoolName'))]",
-    "backendPool": {
+    "backendPoolId":"[resourceId('Microsoft.Network/loadBalancers/backendAddressPools',parameters('loadBalancerName'),parameters('backendPoolName'))]",
+    "backendPool": [
+      {
         "id":"[variables('backendPoolId')]"
-    },
+      }
+    ],
     "storageAccountType":"[if(not(equals(parameters('availabilitySetName'),'none')),'Standard_LRS','Premium_LRS')]",
     "imagePublisher": "Canonical",
     "imageOffer": "UbuntuServer",
