@@ -1,0 +1,83 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "loadBalancerName": {
+      "type": "string",
+      "metadata": {
+        "description": "This is the name of the load balancer."
+      }
+    },
+    "virtualNetworkResourceGroupName":{
+      "type": "string"
+    },
+    "virtualNetworkName":{
+        "type": "string"
+    },
+    "subnetName":{
+        "type": "string"
+    }
+  },
+  "variables": {
+    "loadBalancerId":"[resourceId(resourceGroup().name,'Microsoft.Network/loadBalancers',parameters('loadBalancerName'))]",
+    "VnetID": "[resourceID(parameters('virtualNetworkResourceGroupName'),'Microsoft.Network/virtualNetworks',parameters('virtualNetworkName'))]",
+    "subnetRef": "[concat(variables('VnetID'),'/subnets/',parameters('subnetName'))]"
+  },
+  "resources": [
+    {
+      "apiVersion": "2015-05-01-preview",
+      "type": "Microsoft.Network/loadBalancers",
+      "name": "[parameters('loadBalancerName')]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "frontendIPConfigurations":[
+          {
+            "name":"KubeAPIServer-FrontEndIPConfig",
+              "properties":{
+                "privateIPAllocationMethod":"Dynamic",
+                "subnet": {
+                  "id": "[variables('subnetRef')]"
+                }
+              }
+          }
+        ],
+        "backendAddressPools":[
+          {
+            "name": "KubeAPIServer-BackendPool"
+          }
+        ],
+        "loadBalancingRules":[
+          {
+            "name": "KubeAPIServer-LBRule",
+            "properties":{
+              "backendAddressPool": {
+                "id": "[concat(variables('loadBalancerId'),'/backendAddressPools/KubeAPIServer-BackendPool')]"
+              },
+              "frontendPort":6443,
+              "backendPort":6443,
+              "frontendIPConfiguration": {
+                "id": "[concat(variables('loadBalancerId'),'/frontendIpConfigurations/KubeAPIServer-FrontEndIPConfig')]"
+              },
+              "probe": {
+                "id": "[concat(variables('loadBalancerId'),'/probes/KubeAPIServer-Probe')]"
+              },
+              "protocol":"Tcp"
+            }
+          }
+        ],
+        "probes": [
+          {   
+          "name": "KubeAPIServer-Probe",              
+              "properties": {
+              "protocol": "Tcp",
+              "port": 6443,
+              "intervalInSeconds": 5,
+              "numberOfProbes": 2
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "outputs": {}
+}
