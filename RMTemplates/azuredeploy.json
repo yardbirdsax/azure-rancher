@@ -9,10 +9,10 @@
       },
       "defaultValue": "azureadmin"
     },
-    "sshKeys": {
-        "type": "array",
+    "sshKey": {
+        "type": "string",
         "metadata": {
-          "description": "Array of SSH public keys to install on the virtual machines."
+          "description": "SSH public key to install on the virtual machines."
         }
     },
     "virtualNetworkResourceGroupName":{
@@ -20,6 +20,20 @@
       "metadata": {
         "description": "The name of the resource group where the virtual network resides."
       }
+    },
+    "virtualNetworkName":{
+        "type": "string"
+    },
+    "subnetName":{
+        "type": "string"
+    },
+    "loadBalancerName":{
+        "type": "string",
+        "defaultValue": "none"
+    },
+    "backendPoolName":{
+        "type": "string",
+        "defaultValue": "none"
     },
     "recoveryVaultName":{
       "type": "string",
@@ -54,10 +68,14 @@
         "metadata": {
             "description":"The size of the VM data disks in gigabytes."
         }
+    },
+    "VMSize":{
+      "type": "string",
+      "defaultValue": "Standard_D2S_V3"
     }
   },
   "variables": {
-    "templateUrl": "[concat('https://raw.githubusercontent.com/',parameters('gitHubUserName'),'azure-rancher/',parameters('branchName'),'/RMTemplates/')]",
+    "templateUrl": "[concat('https://raw.githubusercontent.com/',parameters('gitHubUserName'),'/azure-rancher/',parameters('branchName'),'/RMTemplates/')]",
     "availabilitySetName":"[concat(parameters('virtualMachineName'),'KUBE-AS')]"
   },
   "resources": [
@@ -68,7 +86,7 @@
       "apiVersion": "2016-06-01",
       "properties": {
         "templateLink":{
-          "uri":"[concat(variables('templateURL'),'AvailabilitySet.template.json')]"
+          "uri":"[concat(variables('templateURL'),'availabilitySet.template.json')]"
         },
         "mode":"Incremental",
         "parameters":{
@@ -98,11 +116,23 @@
           "adminUserName":{
             "value":"[parameters('adminUsername')]"
           },
-          "sshKeys":{
-            "value":"[parameters('sshKeys')]"
+          "sshKey":{
+            "value":"[parameters('sshKey')]"
           },
           "virtualNetworkResourceGroupName":{
             "value":"[parameters('virtualNetworkResourceGroupName')]"
+          },
+          "virtualNetworkName":{
+            "value":"[parameters('virtualNetworkName')]"
+          },
+          "subnetName":{
+            "value":"[parameters('subnetName')]"
+          },
+          "loadBalancerName":{
+            "value":"[parameters('loadBalancerName')]"
+          },
+          "backendPoolName":{
+            "value":"[parameters('backendPoolName')]"
           },
           "recoveryVaultName":{
             "value":"[parameters('recoveryVaultName')]"
@@ -115,6 +145,9 @@
           },
           "dataDiskSize":{
               "value":"[parameters('dataDiskSize')]"
+          },
+          "VMSize":{
+            "value":"[parameters('VMSize')]"
           }
         }
       }

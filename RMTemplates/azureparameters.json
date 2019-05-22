@@ -5,27 +5,38 @@
       "adminUsername":{
         "value": "azureadmin"
       },
-      "sshKeys":{
+      "sshKey":{
           "metadata": {
-              "description":"An array of SSH public keys to use with the VMs."
+              "description":"The SSH public key to use with the VMs."
           },
-          "value": [
-
-          ]
+          "value": ""
       },
       "virtualMachineName":{
-        "value": "USE-GTSDPWEB",
+        "value": "USE2-RNKUB",
         "metadata": {
           "description":"The first part of the virtual machine name. Full names will use this plus a numerical incrementing identifier based on the number of VMs to provision."
+        }
       },
       "virtualNetworkResourceGroupName":{
-        "value":"JEFLab"
+        "value":"USE2-LOGAKSCLUS01"
+      },
+      "virtualNetworkName":{
+        "value":"USE2-LOGAKSCLUS01"
+      },
+      "subnetName":{
+        "value":"rancher"
+      },
+      "loadBalancerName":{
+        "value":"none"
+      },
+      "backendPoolName":{
+        "value":"none"
       },
       "recoveryVaultName":{
         "value": "none"
       },
-      "webServerCount":{
-        "value": 4
+      "serverCount":{
+        "value": 3
       }
     }
 }
