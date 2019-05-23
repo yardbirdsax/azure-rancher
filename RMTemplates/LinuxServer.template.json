@@ -66,6 +66,9 @@
             "18.04-LTS"
         ],
         "defaultValue": "16.04-LTS"
+    },
+    "scriptsUrl": {
+      "type": "string"
     }
   },
   "variables": {
@@ -111,8 +114,11 @@
     {
       "name": "[parameters('VMName')]",
       "type": "Microsoft.Compute/virtualMachines",
-      "apiVersion": "2016-04-30-preview",
+      "apiVersion": "2018-10-01",
       "location": "[resourceGroup().location]",
+      "identity":{
+        "type": "SystemAssigned"
+      },
       "dependsOn": [
         "[variables('vmNicName')]"
       ],
@@ -170,6 +176,55 @@
             }
           ]
         }
+      },
+      "resources": [
+        {
+          "apiVersion": "2015-06-15",
+          "type": "extensions",
+          "name": "dockerInstall",
+          "location": "[resourceGroup().location]",
+          "dependsOn": [
+            "[concat('Microsoft.Compute/virtualMachines/', parameters('VMName'))]"
+          ],
+          "properties": {
+            "publisher": "Microsoft.Azure.Extensions",
+            "type": "CustomScript",
+            "typeHandlerVersion": "2.0",
+            "autoUpgradeMinorVersion": true,
+            "settings": {
+              "fileUris": [
+                "[concat(parameters('scriptsUrl'),'/installDocker.sh')]"
+              ]
+            },
+            "protectedSettings": {
+              "commandToExecute": "sudo sh installDocker.sh > /var/log/dockerinstall.log &2>1"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "[guid(concat('Microsoft.Compute/virtualMachines/', parameters('VMName'), 'vmidentity'))]",
+      "type": "Microsoft.Authorization/roleAssignments",
+      "dependsOn": [
+        "[parameters('VMName')]"
+      ],
+      "apiVersion": "2017-09-01",
+      "properties": {
+        "roleDefinitionId": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/', 'b24988ac-6180-42a0-ab88-20f7382dd24c')]",
+        "principalId": "[reference(concat('Microsoft.Compute/virtualMachines/', parameters('VMName')), '2017-03-30', 'Full').identity.principalId]"
+      }
+    },
+    {
+      "name": "[guid(concat('Microsoft.Compute/virtualMachines/', parameters('VMName'), 'vmidentityRead'))]",
+      "type": "Microsoft.Authorization/roleAssignments",
+      "dependsOn": [
+        "[parameters('VMName')]"
+      ],
+      "apiVersion": "2017-09-01",
+      "properties": {
+        "roleDefinitionId": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/', 'b24988ac-6180-42a0-ab88-20f7382dd24c')]",
+        "principalId": "[reference(concat('Microsoft.Compute/virtualMachines/', parameters('VMName')), '2017-03-30', 'Full').identity.principalId]"
       }
     },
     {

@@ -76,6 +76,7 @@
   },
   "variables": {
     "templateUrl": "[concat('https://raw.githubusercontent.com/',parameters('gitHubUserName'),'/azure-rancher/',parameters('branchName'),'/RMTemplates/')]",
+    "scriptsUrl": "[concat('https://raw.githubusercontent.com/',parameters('gitHubUserName'),'/azure-rancher/',parameters('branchName'),'/Scripts/')]",
     "availabilitySetName":"[concat(parameters('virtualMachineName'),'KUBE-AS')]"
   },
   "resources": [
@@ -178,7 +179,7 @@
           }
         }
       }
-    }
+    }    
   ],
   "outputs": {
     "return":{
