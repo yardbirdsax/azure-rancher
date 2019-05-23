@@ -216,18 +216,6 @@
       }
     },
     {
-      "name": "[guid(concat('Microsoft.Compute/virtualMachines/', parameters('VMName'), 'vmidentityRead'))]",
-      "type": "Microsoft.Authorization/roleAssignments",
-      "dependsOn": [
-        "[parameters('VMName')]"
-      ],
-      "apiVersion": "2017-09-01",
-      "properties": {
-        "roleDefinitionId": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/', 'b24988ac-6180-42a0-ab88-20f7382dd24c')]",
-        "principalId": "[reference(concat('Microsoft.Compute/virtualMachines/', parameters('VMName')), '2017-03-30', 'Full').identity.principalId]"
-      }
-    },
-    {
       "name": "[concat(parameters('recoveryVaultName'), '/Azure', '/iaasvmcontainer;iaasvmcontainerv2;',resourceGroup().name,';',parameters('VMName'), '/vm;iaasvmcontainerv2;', resourceGroup().name,';',parameters('VMName'))]",
       "type": "Microsoft.RecoveryServices/vaults/backupFabrics/protectionContainers/protectedItems",
       "apiVersion": "2016-12-01",
