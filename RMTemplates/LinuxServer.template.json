@@ -197,7 +197,7 @@
               ]
             },
             "protectedSettings": {
-              "commandToExecute": "sudo sh installDocker.sh > /var/log/dockerinstall.log &2>1"
+              "commandToExecute": "[concat('sudo sh installDocker.sh ', parameters('adminUsername'), ' > /var/log/dockerinstall.log &2>1')]"
             }
           }
         }
