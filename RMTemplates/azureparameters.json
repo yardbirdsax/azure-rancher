@@ -6,22 +6,16 @@
         "value": "azureadmin"
       },
       "sshKey":{
-          "metadata": {
-              "description":"The SSH public key to use with the VMs."
-          },
           "value": ""
       },
       "virtualMachineName":{
-        "value": "USE2-RNKUB",
-        "metadata": {
-          "description":"The first part of the virtual machine name. Full names will use this plus a numerical incrementing identifier based on the number of VMs to provision."
-        }
+        "value": "USE2-RNKUB"
       },
       "virtualNetworkResourceGroupName":{
-        "value":"USE2-LOGAKSCLUS01"
+        "value":"azurelab"
       },
       "virtualNetworkName":{
-        "value":"USE2-LOGAKSCLUS01"
+        "value":"azurelabvnet"
       },
       "subnetName":{
         "value":"rancher"
@@ -36,7 +30,7 @@
         "value": "none"
       },
       "serverCount":{
-        "value": 3
+        "value": 1
       }
     }
 }

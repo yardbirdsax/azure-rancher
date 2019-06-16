@@ -45,8 +45,9 @@
     "serverCount":{
       "type": "int",
       "metadata": {
-        "description":"The number of web servers to create."
-      }
+        "description":"The number of web servers to create. Should be an odd number and more than 1, except for testing purposes."
+      },
+      "defaultValue": 3
     },
     "virtualMachineName":{
       "type": "string",
@@ -56,11 +57,17 @@
     },
     "branchName":{
         "type": "string",
-        "defaultValue": "master"
+        "defaultValue": "master",
+        "metadata": {
+          "description":"The name of the GitHub branch to use when retrieving resources for the deployment. Should be left as 'master' except for testing purposes."
+        }
     },
     "gitHubUserName":{
         "type": "string",
-        "defaultValue": "yardbirdsax"
+        "defaultValue": "yardbirdsax",
+        "metadata": {
+          "description":"The user name of the GitHub repository to use when retrieving resources for the deployment. Should be left as the default except for testing purposes or if you are using a forked version of the repository."
+        }
     },
     "dataDiskSize":{
         "type": "int",
@@ -72,14 +79,67 @@
     "VMSize":{
       "type": "string",
       "defaultValue": "Standard_D2S_V3"
+    },
+    "includeJumpBox":{
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description":"If set to 'true', then a jump box VM will be deployed in the same subnet for SSH access. By default, this is set to false, and should be left that way unless you have no other means of accessing the VMs (such as a VPN client). Note: you must ensure that appropriate NSG rules are put in place to allow connections from allowed IP ranges."
+      }
     }
   },
   "variables": {
     "templateUrl": "[concat('https://raw.githubusercontent.com/',parameters('gitHubUserName'),'/azure-rancher/',parameters('branchName'),'/RMTemplates/')]",
     "scriptsUrl": "[concat('https://raw.githubusercontent.com/',parameters('gitHubUserName'),'/azure-rancher/',parameters('branchName'),'/Scripts/')]",
-    "availabilitySetName":"[concat(parameters('virtualMachineName'),'KUBE-AS')]"
+    "availabilitySetName":"[concat(parameters('virtualMachineName'),'KUBE-AS')]",
+    "publicLoadBalancerName":"[concat('LB-',resourceGroup().name,'-Public')]",
+    "publicIPAddressName":"[concat(resourceGroup().name,'-PublicIP')]"
   },
   "resources": [
+    {
+      "name": "[concat(parameters('virtualMachineName'),'JUMP')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2016-06-01",
+      "dependsOn": [],
+      "properties": {
+        "templateLink":{
+          "uri":"[concat(variables('templateURL'),'LinuxServer.template.json')]"
+        },
+        "mode":"Incremental",
+        "parameters":{
+          "adminUserName":{
+            "value":"[parameters('adminUsername')]"
+          },
+          "sshKey":{
+            "value":"[parameters('sshKey')]"
+          },
+          "virtualNetworkResourceGroupName":{
+            "value":"[parameters('virtualNetworkResourceGroupName')]"
+          },
+          "virtualNetworkName":{
+            "value":"[parameters('virtualNetworkName')]"
+          },
+          "subnetName":{
+            "value":"[parameters('subnetName')]"
+          },
+          "recoveryVaultName":{
+            "value":"[parameters('recoveryVaultName')]"
+          },
+          "VMName":{
+            "value":"[concat(parameters('virtualMachineName'),'JUMP')]"
+          },
+          "dataDiskSize":{
+              "value":32
+          },
+          "VMSize":{
+            "value":"Standard_B2ms"
+          },
+          "scriptsUrl":{
+            "value":"[variables('scriptsUrl')]"
+          }
+        }
+      }
+    },
     {
       "name": "[variables('availabilitySetName')]",
       "condition":"[greater(parameters('serverCount'),1)]",
@@ -124,6 +184,42 @@
       }
     },
     {
+      "name": "[variables('publicIPAddressName')]",
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2018-11-01",
+      "location": "[resourceGroup().location]",
+      "tags": {},
+      "sku": {
+        "name": "Basic"
+      },
+      "properties": {
+        "publicIPAllocationMethod": "Static",
+        "publicIPAddressVersion": "IPv4"
+      }
+    },
+    {
+      "name": "[variables('publicLoadBalancerName')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2016-06-01",
+      "dependsOn": [
+        "[variables('publicIPAddressName')]"
+      ],
+      "properties": {
+        "templateLink":{
+          "uri":"[concat(variables('templateURL'),'LoadBalancerPublic.template.json')]"
+        },
+        "mode":"Incremental",
+        "parameters":{
+          "loadBalancerName":{
+            "value":"[variables('publicLoadBalancerName')]"
+          },
+          "publicIPAddressName":{
+            "value":"[variables('publicIPAddressName')]"
+          }
+        }
+      }
+    },
+    {
       "name": "[concat(parameters('virtualMachineName'),if(less(copyIndex(),10),concat('0',add(copyIndex(),1)),add(copyIndex(),1)))]",
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2016-06-01",
@@ -133,7 +229,8 @@
       },
       "dependsOn": [
         "[variables('availabilitySetName')]",
-        "[parameters('loadBalancerName')]"
+        "[parameters('loadBalancerName')]",
+        "[variables('publicLoadBalancerName')]"
       ],
       "properties": {
         "templateLink":{
@@ -165,6 +262,9 @@
           "recoveryVaultName":{
             "value":"[parameters('recoveryVaultName')]"
           },
+          "publicLoadBalancerName":{
+            "value":"[variables('publicLoadBalancerName')]"
+          },
           "VMName":{
             "value":"[concat(parameters('virtualMachineName'),if(less(copyIndex(),10),concat('0',add(copyIndex(),1)),add(copyIndex(),1)))]"
           },
@@ -176,6 +276,9 @@
           },
           "VMSize":{
             "value":"[parameters('VMSize')]"
+          },
+          "scriptsUrl":{
+            "value":"[variables('scriptsUrl')]"
           }
         }
       }
@@ -184,7 +287,11 @@
   "outputs": {
     "return":{
       "type": "array",
-      "value": []
+      "value": [
+        {
+          "PublicIP":"[reference(concat(resourceGroup().name,'-PublicIP'),'2018-11-01','Full').properties.ipAddress]"
+        }
+      ]
     }
   }
 }
