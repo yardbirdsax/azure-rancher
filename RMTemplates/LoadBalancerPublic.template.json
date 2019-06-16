@@ -1,0 +1,104 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "loadBalancerName": {
+      "type": "string",
+      "metadata": {
+        "description": "This is the name of the load balancer."
+      }
+    },
+    "publicIpAddressName":{
+      "type": "string",
+      "metadata":{
+        "description":"The name of the public IP address to use."
+      }
+    }
+  },
+  "variables": {
+    "loadBalancerId":"[resourceId(resourceGroup().name,'Microsoft.Network/loadBalancers',parameters('loadBalancerName'))]",
+    "publicIpAddressId":"[resourceId(resourceGroup().name,'Microsoft.Network/publicIpAddresses',parameters('publicIpAddressName'))]"
+  },
+  "resources": [
+    {
+      "apiVersion": "2015-05-01-preview",
+      "type": "Microsoft.Network/loadBalancers",
+      "name": "[parameters('loadBalancerName')]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "frontendIPConfigurations":[
+          {
+            "name":"Rancher-FrontEndIPConfig",
+              "properties":{
+                "publicIPAddress": {
+                  "id": "[variables('publicIpAddressId')]"
+                }
+              }
+          }
+        ],
+        "backendAddressPools":[
+          {
+            "name": "Rancher-BackendPool"
+          }
+        ],
+        "loadBalancingRules":[
+          {
+            "name": "Rancher-LBRule-HTTPS",
+            "properties":{
+              "backendAddressPool": {
+                "id": "[concat(variables('loadBalancerId'),'/backendAddressPools/Rancher-BackendPool')]"
+              },
+              "frontendPort":443,
+              "backendPort":443,
+              "frontendIPConfiguration": {
+                "id": "[concat(variables('loadBalancerId'),'/frontendIpConfigurations/Rancher-FrontEndIPConfig')]"
+              },
+              "probe": {
+                "id": "[concat(variables('loadBalancerId'),'/probes/Rancher-Probe-HTTPS')]"
+              },
+              "protocol":"Tcp"
+            }
+          },
+          {
+            "name": "Rancher-LBRule-HTTP",
+            "properties":{
+              "backendAddressPool": {
+                "id": "[concat(variables('loadBalancerId'),'/backendAddressPools/Rancher-BackendPool')]"
+              },
+              "frontendPort":80,
+              "backendPort":80,
+              "frontendIPConfiguration": {
+                "id": "[concat(variables('loadBalancerId'),'/frontendIpConfigurations/Rancher-FrontEndIPConfig')]"
+              },
+              "probe": {
+                "id": "[concat(variables('loadBalancerId'),'/probes/Rancher-Probe-HTTP')]"
+              },
+              "protocol":"Tcp"
+            }
+          }
+        ],
+        "probes": [
+          {   
+          "name": "Rancher-Probe-HTTPS",              
+              "properties": {
+              "protocol": "Tcp",
+              "port": 443,
+              "intervalInSeconds": 5,
+              "numberOfProbes": 2
+            }
+          },
+          {   
+            "name": "Rancher-Probe-HTTP",              
+              "properties": {
+              "protocol": "Tcp",
+              "port": 80,
+              "intervalInSeconds": 5,
+              "numberOfProbes": 2
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "outputs": {}
+}
