@@ -69,6 +69,10 @@
     },
     "scriptsUrl": {
       "type": "string"
+    },
+    "installDocker":{
+      "type": "bool",
+      "defaultValue": true
     }
   },
   "variables": {
@@ -183,6 +187,7 @@
           "type": "extensions",
           "name": "dockerInstall",
           "location": "[resourceGroup().location]",
+          "condition":"[equals(parameters('installDocker'),'true')]",
           "dependsOn": [
             "[concat('Microsoft.Compute/virtualMachines/', parameters('VMName'))]"
           ],
@@ -206,6 +211,7 @@
     {
       "name": "[guid(concat('Microsoft.Compute/virtualMachines/', parameters('VMName'), 'vmidentity'))]",
       "type": "Microsoft.Authorization/roleAssignments",
+      "condition":"[equals(parameters('installDocker'),'true')]",
       "dependsOn": [
         "[parameters('VMName')]"
       ],
