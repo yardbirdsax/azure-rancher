@@ -28,6 +28,10 @@
         "type": "string",
         "defaultValue": "none"
     },
+    "publicLoadBalancerName":{
+      "type": "string",
+      "defaultValue": "none"
+    },
     "backendPoolName":{
         "type": "string",
         "defaultValue": "none"
@@ -84,6 +88,15 @@
         "id":"[variables('backendPoolId')]"
       }
     ],
+    "backendPoolIdPublic":"[resourceId('Microsoft.Network/loadBalancers/backendAddressPools',parameters('publicLoadBalancerName'),'Rancher-BackendPool')]",
+    "backendPoolPublic":[
+      {
+        "id":"[variables('backendPoolId')]"
+      },
+      {
+        "id":"[variables('backendPoolIdPublic')]"
+      }
+    ],
     "storageAccountType":"[if(not(equals(parameters('availabilitySetName'),'none')),'Standard_LRS','Premium_LRS')]",
     "imagePublisher": "Canonical",
     "imageOffer": "UbuntuServer",
@@ -109,7 +122,7 @@
                     "id": "[variables('subnetRef')]"
                 },
                 "primary":"true",
-                "loadBalancerBackEndAddressPools":"[if(equals('none',parameters('loadBalancerName')),json('null'),variables('backendPool'))]"
+                "loadBalancerBackEndAddressPools":"[if(equals('none',parameters('publicLoadBalancerName')),if(equals('none',parameters('loadBalancerName')),json('null'),variables('backendPool')),variables('backendPoolIdPublic'))]"
                 }
             }
         ]
