@@ -75,8 +75,8 @@
       "type": "string"
     },
     "installDocker":{
-      "type": "bool",
-      "defaultValue": true
+      "type": "string",
+      "defaultValue": "yes"
     }
   },
   "variables": {
@@ -200,7 +200,7 @@
           "type": "extensions",
           "name": "dockerInstall",
           "location": "[resourceGroup().location]",
-          "condition":"[equals(parameters('installDocker'),'true')]",
+          "condition":"[equals(parameters('installDocker'),'yes')]",
           "dependsOn": [
             "[concat('Microsoft.Compute/virtualMachines/', parameters('VMName'))]"
           ],
