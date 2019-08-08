@@ -81,10 +81,10 @@
       "defaultValue": "Standard_D2S_V3"
     },
     "includeJumpBox":{
-      "type": "bool",
-      "defaultValue": false,
+      "type": "string",
+      "defaultValue": "no",
       "metadata": {
-        "description":"If set to 'true', then a jump box VM will be deployed in the same subnet for SSH access. By default, this is set to false, and should be left that way unless you have no other means of accessing the VMs (such as a VPN client). Note: you must ensure that appropriate NSG rules are put in place to allow connections from allowed IP ranges."
+        "description":"If set to 'yes', then a jump box VM will be deployed in the same subnet for SSH access. By default, this is set to 'no', and should be left that way unless you have no other means of accessing the VMs (such as a VPN client). Note: you must ensure that appropriate NSG rules are put in place to allow connections from allowed IP ranges."
       }
     }
   },
@@ -99,6 +99,7 @@
     {
       "name": "[concat(parameters('virtualMachineName'),'JUMP')]",
       "type": "Microsoft.Resources/deployments",
+      "condition":"[equals('yes',parameters('includeJumpBox'))]",
       "apiVersion": "2016-06-01",
       "dependsOn": [],
       "properties": {
