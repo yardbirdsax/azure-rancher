@@ -6,7 +6,7 @@
         "value": "azureadmin"
       },
       "sshKey":{
-          "value": ""
+          "value": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQChBDApWtN3JkUXc1Dn/tZWR0zr5PeETRnQzgW87gTPbQ7rwsHeAGvtRfgMRKW59wmRi40A/YrmEZ1EvbvTroWQNSiJ1N12d0OXb5tvwbKQhtDJMDbQYDBjgS7BSJMF7hRwVCEp6czTtiNnt3t2Xwlo179qklmsFCo9oF+zBhGgVA84ELg+TQ9tzA9rC3+27p95/ZKMw/7jRQwkKP3jrzJoJyE/s6E9H/JCtDEdb1V5LGC924J6c+aAAhQmfGkQ3lKlgd+w1fQ4XpB3hdK4yOkOruSdBIsS5++YwS90bw7JCO0bH9JLEhkacQsveLGtNcdjkLgSpRAkgAXb9K5DT5cH josh@JoFe4BQTHM2"
       },
       "virtualMachineName":{
         "value": "USE2-RNKUB"
@@ -30,7 +30,7 @@
         "value": "none"
       },
       "serverCount":{
-        "value": 1
+        "value": 3
       }
     }
 }
