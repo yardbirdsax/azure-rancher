@@ -224,7 +224,7 @@
     {
       "name": "[guid(concat('Microsoft.Compute/virtualMachines/', parameters('VMName'), 'vmidentity'))]",
       "type": "Microsoft.Authorization/roleAssignments",
-      "condition":"[equals(parameters('installDocker'),'true')]",
+      "condition":"[equals(parameters('installDocker'),'yes')]",
       "dependsOn": [
         "[parameters('VMName')]"
       ],
